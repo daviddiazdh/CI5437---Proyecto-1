@@ -8,12 +8,13 @@
 #include <exception>
 #include <algorithm>
 #include <cmath>
-#include <map>
+#include <fstream>
 
 using namespace std;
 
 int N = 12;
 int k = 4;
+unsigned long long generated_states = 0;
 
 struct node{
     vector<int> state;
@@ -171,7 +172,7 @@ dfs_output dfs_contour(node &n, double f_limit, double (*f)(node&)){
         //cout << "Para el sucesor s = ";
         // print_state(s);
         // cout << "con costo " << s.cost << endl;
-
+        generated_states++;
         path.push_back(s.state);
 
         dfs_output new_dfs_output = dfs_contour(s, f_limit, f);
@@ -218,20 +219,20 @@ node ida(vector<int> initial_state, double (*f)(node&)){
 
 }
 
-void print_vector(vector<int> &n){
+void print_vector(vector<int> &n, ofstream &output_file){
 
-    cout << "[";
+    output_file << "[";
     int i = 0;
     while(i < N){
         if(i == N - 1){
-            cout << n[i];
+            output_file << n[i];
         } else {
-            cout << n[i] << ", ";
+            output_file << n[i] << ", ";
         }
         i++;
     }
 
-    cout << "]" << endl;
+    output_file << "]" << endl;
 
 }
 
@@ -249,7 +250,13 @@ int main(int argc, char* argv[]){
 
     // Obtención de nombre de archivo de texto donde se registarará la solución (en caso de existir una)
     char* file_name = argv[N + 1];
-    cout << file_name << endl;
+    ofstream output_file(file_name);
+
+    if (!output_file.is_open()) {
+        cerr << "No se pudo hallar el archivo" << endl;
+        output_file.close();
+        return 1;
+    }
 
     vector<int> initial;
     node solution;
@@ -268,18 +275,22 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    cout << "path: [";
+    
+    print_vector(initial, output_file);
     int i = 0;
     while(i < path.size()){
         if(i == path.size() - 1){
-            print_vector(path[i]);
+            print_vector(path[i], output_file);
         } else {
-            print_vector(path[i]);
-            cout << ", ";
+            print_vector(path[i], output_file);
         }
         i++;
     }
-    cout << "]" << endl;
+
+    cout << "Longitud del camino desde el estado inicial hasta la meta: " << path.size() + 1 << endl;
+    cout << "Estados generados: " << generated_states << endl;
+
+    output_file.close();
 
 }
 

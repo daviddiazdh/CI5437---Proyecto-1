@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <fstream>
 
 using namespace std;
 
@@ -16,6 +17,8 @@ int N = 12;
 int k = 4;
 unordered_map<int, int> movements_in_window;
 vector<int> path;
+unsigned long long path_length = 0;
+unsigned long long generated_states = 0;
 int pos_one;
 
 struct node{
@@ -71,20 +74,20 @@ double f(node& n){
     return n.cost + heuristic(n);
 }
 
-void print_state(node &n){
+void print_state(node &n, ofstream& output_file){
 
-    cout << "[";
+    output_file << "[";
     int i = 0;
     while(i < N){
         if(i == N - 1){
-            cout << n.state[i];
+            output_file << n.state[i];
         } else {
-            cout << n.state[i] << ", ";
+            output_file << n.state[i] << ", ";
         }
         i++;
     }
 
-    cout << "]" << endl;
+    output_file << "]" << endl;
 
 }
 
@@ -269,7 +272,7 @@ dfs_output dfs_contour(node &n, double f_limit, double (*f)(node&)){
         // cout << "Para el sucesor s = ";
         // print_state(s);
         // cout << "con costo " << s.cost << " y profundidad " << s.depth <<  endl;
-
+        generated_states++;
         path.push_back(s.last_rotation);
 
         dfs_output new_dfs_output = dfs_contour(s, f_limit, f);
@@ -355,11 +358,10 @@ void print_vector(vector<int> &n){
 
 }
 
-void reconstruct_solution(vector<int> partial_vector){
+void reconstruct_solution(vector<int> partial_vector, ofstream& output_file){
 
     node partial_solution = {partial_vector};
-    cout << "Camino recorrido: " << endl;
-    print_state(partial_solution); 
+    print_state(partial_solution, output_file); 
 
     for(int rot : path){
 
@@ -379,7 +381,8 @@ void reconstruct_solution(vector<int> partial_vector){
                 rotate(partial_solution.state.begin(), partial_solution.state.begin() + 1, partial_solution.state.end());
                 iter_movement += 1;
             }
-            print_state(partial_solution);
+            path_length++;
+            print_state(partial_solution, output_file);
         }
 
         int new_pos_one = pos_one + movement;
@@ -405,7 +408,8 @@ void reconstruct_solution(vector<int> partial_vector){
         }
 
         partial_solution = apply_rotation(partial_solution, 0);
-        print_state(partial_solution);
+        path_length++;
+        print_state(partial_solution, output_file);
 
     }
 
@@ -422,7 +426,8 @@ void reconstruct_solution(vector<int> partial_vector){
                 rotate(partial_solution.state.begin(), partial_solution.state.begin() + 1, partial_solution.state.end());
                 iter_movement += 1;
             }
-            print_state(partial_solution);
+            path_length++;
+            print_state(partial_solution, output_file);
         }
 
     }
@@ -456,7 +461,13 @@ int main(int argc, char* argv[]){
 
     // Obtención de nombre de archivo de texto donde se registarará la solución (en caso de existir una)
     char* file_name = argv[N + 1];
-    cout << file_name << endl;
+    ofstream output_file(file_name);
+
+    if (!output_file.is_open()) {
+        cerr << "No se pudo hallar el archivo" << endl;
+        output_file.close();
+        return 1;
+    }
 
     vector<int> initial;
     node solution;
@@ -465,6 +476,7 @@ int main(int argc, char* argv[]){
         initial = initial_state(argv);
     } catch (...){
         cerr << "Los primeros 12 números deben ser enteros." << endl;
+        output_file.close();
         return 1;
     }
 
@@ -472,25 +484,15 @@ int main(int argc, char* argv[]){
         solution = ida(initial, f);
     } catch (...){
         cerr << "No fue encontrada una solución." << endl;
+        output_file.close();
         return 1;
     }
 
-    // cout << "La solución es: " << endl;
-    // print_state(solution); 
+    
+    reconstruct_solution(initial, output_file);
+    cout << "Longitud del camino desde el estado inicial hasta la meta: " << path_length + 1 << endl;
+    cout << "Estados generados: " << generated_states << endl;
 
-    // cout << "path: [";
-    // int i = 0;
-    // while(i < path.size()){
-    //     if(i == path.size() - 1){
-    //         cout << path[i];
-    //     } else {
-    //         cout << path[i] << ", ";
-    //     }
-    //     i++;
-    // }
-    // cout << "]" << endl;
-    cout << "Profundidad: " << solution.depth << endl;
-    reconstruct_solution(initial);
-
+    output_file.close();
 }
 
