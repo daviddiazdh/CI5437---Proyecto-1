@@ -16,6 +16,11 @@ int N = 12;
 int k = 4;
 unsigned long long generated_states = 0;
 
+vector<long long> factorial(N + 1);
+vector<vector<long long>> C(N+1, vector<long long>(N+1));
+vector<int> pattern = {1,3,5,7,9,11};
+int pattern_size = pattern.size();
+
 struct node{
     vector<int> state;
     char last_movement = 'i';
@@ -52,6 +57,85 @@ struct dfs_output{
 
 node goal_node{ std::vector<int>(N) };
 
+
+// Lógica del patrón
+
+void init_factorials(int n) {
+    factorial[0] = 1;
+    for (int i = 1; i <= n; i++)
+        factorial[i] = factorial[i - 1] * i;
+}
+
+long long lehmer_rank(const vector<int>& perm) {
+    int n = perm.size();
+    long long rank = 0;
+
+    for (int i = 0; i < n; i++) {
+        int smaller = 0;
+
+        // contar elementos menores a la derecha
+        for (int j = i + 1; j < n; j++) {
+            if (perm[j] < perm[i])
+                smaller++;
+        }
+
+        rank += smaller * factorial[n - 1 - i];
+    }
+
+    return rank;
+}
+
+
+// Precalcular tabla de combinaciones
+void init_combinations(int n) {
+    for (int i = 0; i <= n; i++) {
+        C[i][0] = C[i][i] = 1;
+        for (int j = 1; j < i; j++)
+            C[i][j] = C[i-1][j-1] + C[i-1][j];
+    }
+}
+
+// Ranking combinadic
+long long combinadic_rank(const vector<int>& comb) {
+    long long rank = 0;
+    int k = comb.size();
+
+    for (int i = 0; i < k; i++) {
+        rank += C[comb[i]][i+1];
+    }
+
+    return rank;
+}
+
+long long find_index(vector<int> state){
+
+    vector<int> perm;
+    vector<int> positions;
+
+    for(int i = 0; i < state.size(); i++){
+        for(int j = 0; j < pattern.size(); j++){
+            if(state[i] == pattern[j]){
+                perm.push_back(state[i]);
+                positions.push_back(i);
+            }
+        }
+    }
+
+    // print_vector(perm);
+    // print_vector(positions);
+
+    long long lehmer_index = lehmer_rank(perm);
+    long long combinadic_index = combinadic_rank(positions);
+
+    // cout << "lehmer_index: " << lehmer_index << endl;
+    // cout << "combinadic_index: " << combinadic_index << endl;
+
+    return lehmer_index + combinadic_index * factorial[pattern_size];
+
+}
+
+// Fin de lógica del patrón
+
 double heuristic(node& n){
 
     int breakpoints = 0;
@@ -65,8 +149,20 @@ double heuristic(node& n){
     return ceil(breakpoints / 2.0);
 }
 
-double f(node& n){
-    return n.cost + heuristic(n);
+double f(node& n, ifstream& pdb_bin){
+
+    long long index = find_index(n.state);
+
+    // cout << "INDEX: " << index << endl;
+
+    long long pdb_cost;
+
+    pdb_bin.seekg(index * sizeof(long long), ios::beg);
+    pdb_bin.read(reinterpret_cast<char*>(&pdb_cost), sizeof(long long));
+
+    // cout << "PDB_COST: " << pdb_cost << endl;
+
+    return n.cost + pdb_cost;
 }
 
 void print_state(node &n){
@@ -157,11 +253,11 @@ bool goal_test(node &n){
 
 }
 
-dfs_output dfs_contour(node &n, double f_limit, double (*f)(node&)){
+dfs_output dfs_contour(node &n, double f_limit, double (*f)(node&, ifstream&), ifstream& pdb_bin){
 
     double next_f = numeric_limits<double>::infinity();
 
-    double node_cost = f(n);
+    double node_cost = f(n, pdb_bin);
 
     if(node_cost > f_limit){ return dfs_output({}, node_cost, true); }
 
@@ -175,7 +271,7 @@ dfs_output dfs_contour(node &n, double f_limit, double (*f)(node&)){
         generated_states++;
         path.push_back(s.state);
 
-        dfs_output new_dfs_output = dfs_contour(s, f_limit, f);
+        dfs_output new_dfs_output = dfs_contour(s, f_limit, f, pdb_bin);
         if(!new_dfs_output.isNull){ return new_dfs_output; }
 
         path.pop_back();
@@ -200,14 +296,14 @@ vector<int> initial_state(char* argv[]){
 
 }
 
-node ida(vector<int> initial_state, double (*f)(node&)){
+node ida(vector<int> initial_state, double (*f)(node&, ifstream&), ifstream& pdb_bin){
 
     node root = {initial_state};
 
-    double f_limit = f(root);
+    double f_limit = f(root, pdb_bin);
     // cout << "Primer valor de f_limit: " << f_limit << endl;
     while (true){
-        dfs_output dfs_solution = dfs_contour(root, f_limit, f);
+        dfs_output dfs_solution = dfs_contour(root, f_limit, f, pdb_bin);
         f_limit = dfs_solution.f_limit;
         if(!dfs_solution.isNull){
             return dfs_solution.solution;
@@ -239,6 +335,11 @@ void print_vector(vector<int> &n, ofstream &output_file){
 
 int main(int argc, char* argv[]){
 
+    // Precalcular los factoriales y números combinatorios para dejarlos en un arreglo 
+    // de modo que calcularlos luego sea O(1)
+    init_factorials(N);
+    init_combinations(N);
+
     // Definición de estado meta:
     iota(goal_node.state.begin(), goal_node.state.end(), 1);
 
@@ -268,8 +369,15 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+    ifstream input_bin("pdb.bin", ios::binary);
+
+    if (!input_bin) {
+        cout << "Error al abrir archivo\n";
+        return 1;
+    }
+
     try{
-        solution = ida(initial, f);
+        solution = ida(initial, f, input_bin);
     } catch (...){
         cerr << "No fue encontrada una solución." << endl;
         return 1;
@@ -291,6 +399,6 @@ int main(int argc, char* argv[]){
     cout << "Estados generados: " << generated_states << endl;
 
     output_file.close();
-
+    input_bin.close();
 }
 
