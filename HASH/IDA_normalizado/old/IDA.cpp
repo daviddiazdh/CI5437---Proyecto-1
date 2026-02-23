@@ -486,7 +486,6 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    
     reconstruct_solution(initial, output_file);
     cout << "Longitud del camino desde el estado inicial hasta la meta: " << path_length + 1 << endl;
     cout << "Estados generados: " << generated_states << endl;
