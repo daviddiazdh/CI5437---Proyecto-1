@@ -161,7 +161,6 @@ int banned_rotation(int last_rotation){
 
     return last_rotation;
     
-
 }
 
 int movements_to_zero(int position){
@@ -181,7 +180,6 @@ void calculate_real_cost(node &n, int rotation){
     if(pos_change >= N){
         pos_change -= N;
     }
-
 
     int movement = movements_to_zero(pos_change);
     // cout << "Cantidad de movimientos para mover a la ventana: " << movement << endl;

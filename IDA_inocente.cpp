@@ -20,14 +20,20 @@ vector<long long> factorial(N + 1);
 vector<vector<long long>> C(N+1, vector<long long>(N+1));
 vector<int> pattern = {1,3,5,7,9,11};
 int pattern_size = pattern.size();
+vector<vector<int>> path;
 
+/**
+ * @brief Representa un nodo del grafo virtual del problema.
+ *
+ * Contiene la información mínima necesaria para identificar
+ * a un nodo como un estado del problema.
+ */
 struct node{
     vector<int> state;
     char last_movement = 'i';
     double cost = 0;
 };
 
-vector<vector<int>> path;
 
 struct dfs_output{
     node solution;
@@ -59,7 +65,6 @@ node goal_node{ std::vector<int>(N) };
 
 
 // Lógica del patrón
-
 void init_factorials(int n) {
     factorial[0] = 1;
     for (int i = 1; i <= n; i++)
