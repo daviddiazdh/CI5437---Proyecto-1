@@ -23,7 +23,7 @@ int pos_one;
 
 vector<long long> factorial(N + 1);
 vector<vector<long long>> C(N+1, vector<long long>(N+1));
-vector<int> pattern = {1,2,3,4,5,6,7};
+vector<int> pattern = {1,2,3,4,5,6,7,8};
 int pattern_size = pattern.size();
 vector<long long> pdb_in_ram;
 
