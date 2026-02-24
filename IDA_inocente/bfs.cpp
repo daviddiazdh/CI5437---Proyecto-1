@@ -4,6 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <fstream>
+#include "conmons.h"
 
 using namespace std;
 
@@ -14,13 +15,8 @@ struct node{
     char last_movement = 'i';
 };
 
-int N = 12;
-int k = 4;
-
 vector<long long> factorial(N + 1);
 vector<vector<long long>> C(N+1, vector<long long>(N+1));
-vector<int> pattern = {1,3,5,7,9,11};
-int pattern_size = pattern.size();
 
 
 node apply_rotation(node n, int i){

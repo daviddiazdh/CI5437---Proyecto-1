@@ -9,17 +9,14 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include "conmons.h"
 
 using namespace std;
 
-int N = 12;
-int k = 4;
 unsigned long long generated_states = 0;
 
 vector<long long> factorial(N + 1);
 vector<vector<long long>> C(N+1, vector<long long>(N+1));
-vector<int> pattern = {1,3,5,7,9,11};
-int pattern_size = pattern.size();
 vector<vector<int>> path;
 vector<long long> pdb_in_ram;
 
